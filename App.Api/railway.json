@@ -1,0 +1,9 @@
+{
+  "build": {
+    "dockerfile": "Dockerfile",
+    "app": "App.Api"
+  },
+  "deploy": {
+    "port": "PORT"
+  }
+}
