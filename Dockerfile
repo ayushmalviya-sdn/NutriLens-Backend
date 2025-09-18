@@ -2,32 +2,30 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copy solution file (if you have one). If not, you can restore via csproj of App.Api
-COPY *.sln ./
+# Copy the solution file from the App.Api directory
+COPY App.Api/App.Api.sln ./App.Api/
 
-# Copy project files of all libraries and API
+# Copy the .csproj files of all libraries and API
 COPY App.Api/*.csproj ./App.Api/
 COPY App.Application/*.csproj ./App.Application/
 COPY App.Common/*.csproj ./App.Common/
 COPY App.Domain/*.csproj ./App.Domain/
 COPY App.Infrastructure/*.csproj ./App.Infrastructure/
-# If you want tests built (optional), you can include:
 COPY App.Services.Test/*.csproj ./App.Services.Test/
 
-# Restore all
-RUN dotnet restore
+# Restore dependencies for the solution
+RUN dotnet restore App.Api/App.Api.sln
 
-# Copy everything else
+# Copy the rest of the files
 COPY . .
 
 # Publish the API project
 WORKDIR /src/App.Api
 RUN dotnet publish -c Release -o /app/publish
 
-# Build final runtime image
+# Final runtime image (lightweight)
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
-
 COPY --from=build /app/publish .
 
 # Set environment variable for dynamic port (Railway provides PORT)
