@@ -1,26 +1,38 @@
-﻿using App.Application.Dto;
-using App.Application.Interfaces.Services;
+﻿using App.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace App.Api.Controllers
 {
     [ApiController]
-    //[Authorize]
     [Route("/api/[controller]")]
-    public class UserController(IUserService userService) : BaseController
+    public class MainController : BaseController
     {
-        private readonly IUserService _userService = userService;
+        private readonly IFileUploadService _fileUploadService;
+        private readonly IAIService _aiService;
 
-        [HttpPost]
-        public async Task<IActionResult> CreateUserAsync([FromBody] UserDto userDto)
+        // Correct constructor syntax
+        public MainController(IFileUploadService fileUploadService, IAIService aiService)
         {
-            return Ok(await _userService.CreateUserAsync(userDto));
+            _fileUploadService = fileUploadService;
+            _aiService = aiService;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetUsersAsync()
+        [HttpPost("upload")]
+        public async Task<IActionResult> UploadFile(IFormFile file)
         {
-            return Ok(await _userService.GetAllAsync());
+            if (file == null || file.Length == 0)
+                return BadRequest("No file uploaded.");
+
+            try
+            {
+                var fileUrl = await _fileUploadService.UploadFileAsync(file);
+                var aiResponse = await _aiService.GenerateNutrientDetails(fileUrl);
+                return Ok(new { message = "File uploaded successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
         }
     }
 }
