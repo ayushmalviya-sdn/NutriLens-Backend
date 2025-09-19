@@ -23,11 +23,13 @@ internal class Program
 
         var app = builder.Build();
         app.UseMiddleware<ExceptionHandlingMiddleware>();
-        if (app.Environment.IsDevelopment())
+        app.UseSwagger();
+        app.UseSwaggerUI(c =>
         {
-            app.UseSwagger();
-            app.UseSwaggerUI();
-        }
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+            c.RoutePrefix = "swagger";
+        });
+
         app.UseHttpsRedirection();
         app.UseAuthorization();
         app.MapControllers();
