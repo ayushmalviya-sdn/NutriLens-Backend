@@ -11,5 +11,6 @@ namespace App.Application.Interfaces.Services
     public interface IAIService
     {
         Task<dynamic> GenerateNutrientDetails(string filePath);
+        Task<string> GetAIResponseAsync(string prompt);
     }
 }
