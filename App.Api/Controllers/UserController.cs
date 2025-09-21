@@ -1,6 +1,8 @@
-﻿using App.Application.Interfaces.Services;
+﻿using App.Application.Dto;
+using App.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace App.Api.Controllers
 {
@@ -60,11 +62,21 @@ namespace App.Api.Controllers
             }
         }
 
-        [HttpPost("generate-response")]
-        public async Task<IActionResult> GenerateResponse([FromBody] string prompt)
+        public async Task<IActionResult> GenerateResponse([FromBody] FoodData foodData)
         {
-            var response = await _aiService.GetAIResponseAsync(prompt);
-            return Ok(new { Response = response });
+            
+            JObject response = await _aiService.GetAIResponseAsync(foodData);
+
+            if (response == null)
+                return BadRequest(new { error = "Failed to get valid JSON from AI model." });
+
+            // Return the processed response as JSON
+            return new ContentResult
+            {
+                Content = response.ToString(),
+                ContentType = "application/json",
+                StatusCode = 200
+            };
         }
     }
 }

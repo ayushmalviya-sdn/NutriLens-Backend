@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using App.Application.Dto;
+using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +13,6 @@ namespace App.Application.Interfaces.Services
     public interface IAIService
     {
         Task<dynamic> GenerateNutrientDetails(string filePath);
-        Task<string> GetAIResponseAsync(string prompt);
+        Task<JObject> GetAIResponseAsync(FoodData prompt);
     }
 }

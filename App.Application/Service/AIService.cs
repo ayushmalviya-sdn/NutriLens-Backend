@@ -1,8 +1,10 @@
-﻿using App.Application.Interfaces.Services;
+﻿using App.Application.Dto;
+using App.Application.Interfaces.Services;
 using App.Common.Helpers;
 using Flurl.Http;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -109,40 +111,66 @@ namespace App.Application.Service
             }
         }
 
-        public async Task<string> GetAIResponseAsync(string prompt)
+        public async Task<JObject> GetAIResponseAsync(FoodData foodData)
         {
-            return "";
-            //var requestBody = new
-            //{
-            //    model = "meta-llama/llama-3-8b-instruct",
-            //    messages = new[]
-            //  {
-            //    new { role = "user", content = prompt }
-            //},
-            //    temperature = 0.7,
-            //    max_tokens = 200
-            //};
+            string prompt = PrepareFoodPrompt(foodData);
+            var requestBody = new
+            {
+                model = "meta-llama/llama-3-8b-instruct",
+                messages = new[]
+        {
+            new { role = "system", content = "You are a nutrition assistant. Always return only valid JSON following the user’s schema." },
+            new { role = "user", content = prompt }
+        },
+                temperature = 0.7,
+                max_tokens = 200
+            };
 
-            //var content = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json");
+            var content = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json");
 
-            //var request = new HttpRequestMessage
-            //{
-            //    Method = HttpMethod.Post,
-            //    RequestUri = new Uri(_apiUrl),
-            //    Content = content
-            //};
+            var request = new HttpRequestMessage
+            {
+                Method = HttpMethod.Post,
+                RequestUri = new Uri(_configuration["LLM:_apiKey"]),
+                Content = content
+            };
 
-            //request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _apiKey);
-            //request.Headers.Add("HTTP-Referer", "localhost"); // Required by OpenRouter
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _configuration["LLM:_apiKey"]);
+            request.Headers.Add("HTTP-Referer", "localhost");
 
-            //var response = await _httpClient.SendAsync(request);
-            //response.EnsureSuccessStatusCode();
+            var response = await _httpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
 
-            //var responseString = await response.Content.ReadAsStringAsync();
+            var responseString = await response.Content.ReadAsStringAsync();
 
-            //var apiResponse = JsonConvert.DeserializeObject<OpenAIResponse>(responseString);
+            var apiResponse = JsonConvert.DeserializeObject<OpenAIResponse>(responseString);
 
-            //return apiResponse?.Choices?[0]?.Message?.Content?.Trim();
+            var rawContent = apiResponse?.Choices?[0]?.Message?.Content?.Trim();
+
+            if (string.IsNullOrEmpty(rawContent))
+                return null;
+
+            try
+            {
+                return JObject.Parse(rawContent);
+            }
+            catch (JsonReaderException)
+            {
+                return null;
+            }
+        }
+        private string PrepareFoodPrompt(FoodData foodData)
+        {
+            return $"What are the updated calories and minerals in {foodData.FoodName} with the following information: " +
+                   $"Serving Size: {foodData.ServingSize}, " +
+                   $"Protein: {foodData.Macros.Protein}g, " +
+                   $"Carbs: {foodData.Macros.Carbs}g, " +
+                   $"Fat: {foodData.Macros.Fat}g, " +
+                   $"Fiber: {foodData.Macros.Fiber}g, " +
+                   $"Sugar: {foodData.Macros.Sugar}g. " +
+                   "Respond ONLY with valid JSON in this exact format: " +
+                   "{ \"calories\": number, \"minerals\": { \"calcium\": \"value with units\", \"iron\": \"value with units\", \"magnesium\": \"value with units\", \"phosphorus\": \"value with units\", \"potassium\": \"value with units\", \"sodium\": \"value with units\", \"zinc\": \"value with units\", \"copper\": \"value with units\", \"manganese\": \"value with units\" } } " +
+                   "Do not include vitamins or any other fields. Do not include extra text. Do not explain anything.";
         }
     }
 
