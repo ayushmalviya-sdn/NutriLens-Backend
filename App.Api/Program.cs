@@ -19,8 +19,16 @@ internal class Program
             .AddFluentValidationClientsideAdapters();
         builder.Services.AddValidatorsFromAssemblyContaining<UsersValidator>();
         builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
-
+        builder.Services.AddSwaggerGen(); builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("AllowAngularApp",
+                policy =>
+                {
+                    policy.AllowAnyOrigin()
+      .AllowAnyHeader()
+      .AllowAnyMethod();
+                });
+        });
         var app = builder.Build();
         app.UseMiddleware<ExceptionHandlingMiddleware>();
         app.UseSwagger();
@@ -30,6 +38,7 @@ internal class Program
             c.RoutePrefix = "swagger";
         });
 
+        app.UseCors("AllowAngularApp");
         app.UseHttpsRedirection();
         app.UseAuthorization();
         app.MapControllers();

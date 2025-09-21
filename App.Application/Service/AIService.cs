@@ -14,7 +14,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 namespace App.Application.Service
 {
-    
+
     public class AIService : IAIService
     {
         private readonly HttpClient _httpClient;
@@ -27,11 +27,11 @@ namespace App.Application.Service
             _configuration = configuration;
             _headerManager = headerManager;
         }
-      
+
 
         public async Task<dynamic> GenerateNutrientDetails(string fileUrl)
         {
-           
+
             var apiBaseUrl = $"{_configuration["AppSettings:ApiBaseUrl"]}/InvokeLLM";
             var body = new
             {
@@ -131,9 +131,10 @@ namespace App.Application.Service
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
-                RequestUri = new Uri(_configuration["LLM:_apiKey"]),
+                RequestUri = new Uri(_configuration["LLM:_apiUrl"]),
                 Content = content
             };
+            var key = _configuration["LLM:_apiKey"];
 
             request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _configuration["LLM:_apiKey"]);
             request.Headers.Add("HTTP-Referer", "localhost");

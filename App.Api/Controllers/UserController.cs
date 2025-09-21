@@ -1,5 +1,6 @@
 ﻿using App.Application.Dto;
 using App.Application.Interfaces.Services;
+using Azure;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -20,28 +21,9 @@ namespace App.Api.Controllers
             _aiService = aiService;
         }
 
-        public class AIResponse
-        {
-            public string FoodName { get; set; }
-            public string FoodCategory { get; set; }
-            public int CaloriesPerServing { get; set; }
-            public string ServingSize { get; set; }
-            public Macros Macros { get; set; }
-            public int HealthinessScore { get; set; }
-            public List<string> HealthierAlternatives { get; set; }
-            public int ConfidenceScore { get; set; }
-        }
 
-        public class Macros
-        {
-            public double Protein { get; set; }
-            public double Carbs { get; set; }
-            public double Fat { get; set; }
-            public double Fiber { get; set; }
-            public double Sugar { get; set; }
-        }
 
-        [HttpPost("upload")]
+        [HttpPost("[action]")]
         public async Task<ActionResult<AIResponse>> UploadFile(IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -53,7 +35,7 @@ namespace App.Api.Controllers
                 var aiResponse = await _aiService.GenerateNutrientDetails(fileUrl);
 
                 var result = JsonConvert.SerializeObject(aiResponse);
-                Console.WriteLine(result);  // Or use ILogger to log
+                Console.WriteLine(result);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -62,9 +44,10 @@ namespace App.Api.Controllers
             }
         }
 
+        [HttpPost("[action]")]
         public async Task<IActionResult> GenerateResponse([FromBody] FoodData foodData)
         {
-            
+
             JObject response = await _aiService.GetAIResponseAsync(foodData);
 
             if (response == null)

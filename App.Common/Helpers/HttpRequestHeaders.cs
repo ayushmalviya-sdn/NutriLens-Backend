@@ -25,7 +25,7 @@ namespace App.Common.Helpers
             client.DefaultRequestHeaders.Add("referer", _configuration["AppSettings:RefererUrl"]);
             client.DefaultRequestHeaders.Add("x-app-id", _configuration["AppSettings:AppId"]);
             client.DefaultRequestHeaders.Add("x-origin-url", _configuration["AppSettings:RefererUrl"]);
-           
+
         }
     }
 }
