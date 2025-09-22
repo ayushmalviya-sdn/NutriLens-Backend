@@ -36,13 +36,12 @@ namespace App.Application.Service
             var body = new
             {
                 prompt = @"
-        Analyze this food image and provide detailed nutritional information. 
-        Identify the specific food item(s), estimate portion size, and calculate nutritional values.
-        Be as accurate as possible with calorie estimation and macronutrient breakdown.
-        Also suggest 3-5 healthier alternatives if the food is not particularly healthy.
-        Rate the overall healthiness on a scale of 1-10 (1 being very unhealthy, 10 being very healthy).
-        Provide a confidence score for your food identification (0-100%).
-        ",
+                        Analyze this food image and provide detailed nutritional information. 
+                        Identify the specific food item(s), estimate portion size, and calculate nutritional values.
+                        Be as accurate as possible with calorie estimation and macronutrient breakdown.
+                        Also suggest 3-5 healthier alternatives if the food is not particularly healthy.
+                        Rate the overall healthiness on a scale of 1-10 (1 being very unhealthy, 10 being very healthy).
+                        Provide a confidence score for your food identification (0-100%).",
                 file_urls = new[] { fileUrl },
                 response_json_schema = new
                 {
@@ -82,7 +81,7 @@ namespace App.Application.Service
                 var response = await apiBaseUrl
                     .WithHeader("accept", "application/json")
                     .WithHeader("accept-language", "en-GB,en-US;q=0.9,en;q=0.8")
-                    .WithHeader("authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjaWhveDM5MDQ3QGNhbWpvaW50LmNvbSIsImV4cCI6MTc1OTAzMjIwOSwiaWF0IjoxNzU4NDI3NDA5fQ.rqO27vA6CdlzUBF6xcoC-Qj0lpezQHA7YrTRhWQb2Jo")
+                    .WithHeader("authorization", $"Bearer {Environment.GetEnvironmentVariable("API_AUTHTOKEN")}")
                     .WithHeader("content-type", "application/json")
                     .WithHeader("origin", "https://preview--nutri-scan-c317378f.base44.app")
                     .WithHeader("priority", "u=1, i")
@@ -134,9 +133,8 @@ namespace App.Application.Service
                 RequestUri = new Uri(_configuration["LLM:_apiUrl"]),
                 Content = content
             };
-            var key = _configuration["LLM:_apiKey"];
-
-            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _configuration["LLM:_apiKey"]);
+           
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Environment.GetEnvironmentVariable("LLM_API_KEY"));
             request.Headers.Add("HTTP-Referer", "localhost");
 
             var response = await _httpClient.SendAsync(request);
@@ -162,17 +160,39 @@ namespace App.Application.Service
         }
         private string PrepareFoodPrompt(FoodData foodData)
         {
-            return $"What are the updated calories and minerals in {foodData.FoodName} with the following information: " +
+            return $"What are the updated calories, serving size, and macronutrients in {foodData.FoodName} with the following information: " +
                    $"Serving Size: {foodData.ServingSize}, " +
                    $"Protein: {foodData.Macros.Protein}g, " +
                    $"Carbs: {foodData.Macros.Carbs}g, " +
                    $"Fat: {foodData.Macros.Fat}g, " +
                    $"Fiber: {foodData.Macros.Fiber}g, " +
                    $"Sugar: {foodData.Macros.Sugar}g. " +
-                   "Respond ONLY with valid JSON in this exact format: " +
-                   "{ \"calories\": number, \"minerals\": { \"calcium\": \"value with units\", \"iron\": \"value with units\", \"magnesium\": \"value with units\", \"phosphorus\": \"value with units\", \"potassium\": \"value with units\", \"sodium\": \"value with units\", \"zinc\": \"value with units\", \"copper\": \"value with units\", \"manganese\": \"value with units\" } } " +
+                   "Please respond ONLY with valid JSON in this exact format: " +
+                   "{ " +
+                       "\"corrected_calories\": number, " +
+                       "\"corrected_serving_size\": number, " +
+                       "\"corrected_macros\": { " +
+                           "\"protein\": number, " +
+                           "\"carbs\": number, " +
+                           "\"fat\": number, " +
+                           "\"fiber\": number, " +
+                           "\"sugar\": number " +
+                       "}, " +
+                       "\"minerals\": { " +
+                           "\"calcium\": \"value with units\", " +
+                           "\"iron\": \"value with units\", " +
+                           "\"magnesium\": \"value with units\", " +
+                           "\"phosphorus\": \"value with units\", " +
+                           "\"potassium\": \"value with units\", " +
+                           "\"sodium\": \"value with units\", " +
+                           "\"zinc\": \"value with units\", " +
+                           "\"copper\": \"value with units\", " +
+                           "\"manganese\": \"value with units\" " +
+                       "} " +
+                   "} " +
                    "Do not include vitamins or any other fields. Do not include extra text. Do not explain anything.";
         }
+
     }
 
 }

@@ -18,6 +18,13 @@ namespace App.Api.Configuration
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork<ApplicationDbContext>>();
+            string llmApiKey = Environment.GetEnvironmentVariable("LLM_API_KEY");
+            string AuthToken = Environment.GetEnvironmentVariable("API_AUTHTOKEN");
+            if (string.IsNullOrEmpty(llmApiKey) || string.IsNullOrEmpty(AuthToken))
+            {
+                throw new InvalidOperationException("LLM_API_KEY or API_AUTHTOKEN environment variable is not set.");
+            }
+
             services.AddSingleton<HttpRequestHeaderManager>();
             services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();
             services.AddScoped<IFileUploadService, FileUploadService>();

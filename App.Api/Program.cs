@@ -19,14 +19,15 @@ internal class Program
             .AddFluentValidationClientsideAdapters();
         builder.Services.AddValidatorsFromAssemblyContaining<UsersValidator>();
         builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen(); builder.Services.AddCors(options =>
+        builder.Services.AddSwaggerGen();
+        builder.Services.AddCors(options =>
         {
             options.AddPolicy("AllowAngularApp",
                 policy =>
                 {
                     policy.AllowAnyOrigin()
-      .AllowAnyHeader()
-      .AllowAnyMethod();
+                          .AllowAnyHeader()
+                          .AllowAnyMethod();
                 });
         });
         var app = builder.Build();
