@@ -160,15 +160,21 @@ namespace App.Application.Service
         }
         private string PrepareFoodPrompt(FoodData foodData)
         {
+            var macros = foodData.Macros;
+            var servingsOrWeight = 0.0;
+
+            // Prepare the dynamic prompt
             return $"What are the updated calories, serving size, and macronutrients in {foodData.FoodName} with the following information: " +
                    $"Serving Size: {foodData.ServingSize}, " +
-                   $"Protein: {foodData.Macros.Protein}g, " +
-                   $"Carbs: {foodData.Macros.Carbs}g, " +
-                   $"Fat: {foodData.Macros.Fat}g, " +
-                   $"Fiber: {foodData.Macros.Fiber}g, " +
-                   $"Sugar: {foodData.Macros.Sugar}g. " +
-                   "Please respond ONLY with valid JSON in this exact format: " +
-                   "{ " +
+                   $"Protein: {macros.Protein}g, " +
+                   $"Carbs: {macros.Carbs}g, " +
+                   $"Fat: {macros.Fat}g, " +
+                   $"Fiber: {macros.Fiber}g, " +
+                   $"Sugar: {macros.Sugar}g. " +
+                   "Please recognize whether the food is countable or measurable based on the name and adjust the macronutrients accordingly. " +
+                   "If the food is countable (e.g., apples, bananas, eggs), multiply the macronutrient values by the serving count. " +
+                   "If the food is measurable (e.g., burgers, flour, rice), multiply the macronutrient values by the serving size in grams. " +
+                   "Return only the JSON response in the following format, including minerals as well: { " +
                        "\"corrected_calories\": number, " +
                        "\"corrected_serving_size\": number, " +
                        "\"corrected_macros\": { " +
@@ -192,7 +198,6 @@ namespace App.Application.Service
                    "} " +
                    "Do not include vitamins or any other fields. Do not include extra text. Do not explain anything.";
         }
-
     }
 
 }
