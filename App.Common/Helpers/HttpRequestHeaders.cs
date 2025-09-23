@@ -20,7 +20,7 @@ namespace App.Common.Helpers
         public void SetHeaders(HttpClient client)
         {
             client.DefaultRequestHeaders.Add("accept", "application/json");
-            client.DefaultRequestHeaders.Add("authorization", Environment.GetEnvironmentVariable("API_AUTHTOKEN"));
+            client.DefaultRequestHeaders.Add("authorization", $"Bearer {Environment.GetEnvironmentVariable("API_AUTHTOKEN")}");
             client.DefaultRequestHeaders.Add("origin", _configuration["AppSettings:OriginUrl"]);
             client.DefaultRequestHeaders.Add("referer", _configuration["AppSettings:RefererUrl"]);
             client.DefaultRequestHeaders.Add("x-app-id", _configuration["AppSettings:AppId"]);
