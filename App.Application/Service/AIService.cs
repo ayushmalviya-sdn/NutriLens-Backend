@@ -117,12 +117,12 @@ namespace App.Application.Service
             {
                 model = "meta-llama/llama-3-8b-instruct",
                 messages = new[]
-        {
+                {
             new { role = "system", content = "You are a nutrition assistant. Always return only valid JSON following the user’s schema." },
             new { role = "user", content = prompt }
         },
                 temperature = 0.7,
-                max_tokens = 200
+                max_tokens = 300
             };
 
             var content = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json");
@@ -133,7 +133,7 @@ namespace App.Application.Service
                 RequestUri = new Uri(_configuration["LLM:_apiUrl"]),
                 Content = content
             };
-           
+
             request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Environment.GetEnvironmentVariable("LLM_API_KEY"));
             request.Headers.Add("HTTP-Referer", "localhost");
 
@@ -149,6 +149,14 @@ namespace App.Application.Service
             if (string.IsNullOrEmpty(rawContent))
                 return null;
 
+            if (rawContent.StartsWith("```json"))
+                rawContent = rawContent.Substring(7).Trim();
+            else if (rawContent.StartsWith("```"))
+                rawContent = rawContent.Substring(3).Trim();
+
+            if (rawContent.EndsWith("```"))
+                rawContent = rawContent.Substring(0, rawContent.Length - 3).Trim();
+
             try
             {
                 return JObject.Parse(rawContent);
@@ -158,45 +166,48 @@ namespace App.Application.Service
                 return null;
             }
         }
+
         private string PrepareFoodPrompt(FoodData foodData)
         {
             var macros = foodData.Macros;
-            var servingsOrWeight = 0.0;
 
-            // Prepare the dynamic prompt
-            return $"What are the updated calories, serving size, and macronutrients in {foodData.FoodName} with the following information: " +
-                   $"Serving Size: {foodData.ServingSize}, " +
-                   $"Protein: {macros.Protein}g, " +
-                   $"Carbs: {macros.Carbs}g, " +
-                   $"Fat: {macros.Fat}g, " +
-                   $"Fiber: {macros.Fiber}g, " +
-                   $"Sugar: {macros.Sugar}g. " +
-                   "Please recognize whether the food is countable or measurable based on the name and adjust the macronutrients accordingly. " +
-                   "If the food is countable (e.g., apples, bananas, eggs), multiply the macronutrient values by the serving count. " +
-                   "If the food is measurable (e.g., burgers, flour, rice), multiply the macronutrient values by the serving size in grams. " +
-                   "Return only the JSON response in the following format, including minerals as well: { " +
-                       "\"corrected_calories\": number, " +
-                       "\"corrected_serving_size\": number, " +
-                       "\"corrected_macros\": { " +
-                           "\"protein\": number, " +
-                           "\"carbs\": number, " +
-                           "\"fat\": number, " +
-                           "\"fiber\": number, " +
-                           "\"sugar\": number " +
-                       "}, " +
-                       "\"minerals\": { " +
-                           "\"calcium\": \"value with units\", " +
-                           "\"iron\": \"value with units\", " +
-                           "\"magnesium\": \"value with units\", " +
-                           "\"phosphorus\": \"value with units\", " +
-                           "\"potassium\": \"value with units\", " +
-                           "\"sodium\": \"value with units\", " +
-                           "\"zinc\": \"value with units\", " +
-                           "\"copper\": \"value with units\", " +
-                           "\"manganese\": \"value with units\" " +
-                       "} " +
-                   "} " +
-                   "Do not include vitamins or any other fields. Do not include extra text. Do not explain anything.";
+            return
+                $"You are a nutrition assistant. You are given the name of a food and its nutritional values **per 100 grams (if measurable)** or **per 1 item (if countable)**.\n\n" +
+
+                $"Food Name: \"{foodData.FoodName}\"\n" +
+                $"Serving Size: {foodData.ServingSize}\n\n" +
+                $"Nutritional values:\n" +
+                $"- Protein: {macros.Protein}g\n" +
+                $"- Carbs: {macros.Carbs}g\n" +
+                $"- Fat: {macros.Fat}g\n" +
+                $"- Fiber: {macros.Fiber}g\n" +
+                $"- Sugar: {macros.Sugar}g\n" +
+                $"- Calories: {foodData.CaloriesPerServing} kcal\n\n" +
+
+                "**Rules:**\n" +
+                "1. If the food is **measurable** (e.g., grams, milliliters), assume the values are per 100 grams and scale them based on the numeric weight provided.\n" +
+                "2. If the food is **countable** (e.g., 2 bananas, 3 eggs), assume the values are per 1 item and multiply all macros and calories by the item count.\n" +
+                "3. Use this formula to calculate calories if needed:\n" +
+                "   - Protein: 4 kcal/g\n" +
+                "   - Carbs: 4 kcal/g\n" +
+                "   - Fat: 9 kcal/g\n" +
+                "4. Round all values to a maximum of 2 decimal places.\n" +
+                "5. Return only valid JSON. Do not include any explanation or extra text.\n\n" +
+
+                "Use this format:\n" +
+                "```json\n" +
+                "{\n" +
+                "  \"corrected_calories\": number,\n" +
+                "  \"corrected_serving_size\": number,\n" +
+                "  \"corrected_macros\": {\n" +
+                "    \"protein\": number,\n" +
+                "    \"carbs\": number,\n" +
+                "    \"fat\": number,\n" +
+                "    \"fiber\": number,\n" +
+                "    \"sugar\": number\n" +
+                "  }\n" +
+                "}\n" +
+                "```";
         }
     }
 
